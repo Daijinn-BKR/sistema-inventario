@@ -1,0 +1,5 @@
+node_modules/
+dist/
+# Claves de tu proyecto: nunca al repositorio (se generan en GitHub Actions desde los secretos)
+config.js
+.env

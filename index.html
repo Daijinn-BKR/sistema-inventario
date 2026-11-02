@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inventario Omega Eléctrica</title>
+<meta name="theme-color" content="#1f5fbf">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Inventario">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  :root {
+    --bg: #f4f5f7; --panel: #ffffff; --text: #1b2430; --muted: #64707f;
+    --line: #dfe3e8; --accent: #1f5fbf; --accent-text: #ffffff;
+    --ok: #1d7a46; --warn: #b45309; --warn-bg: #fff4e0; --bad: #b42318;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12171d; --panel: #1b222b; --text: #e8ecf1; --muted: #93a0b1;
+      --line: #2c3541; --accent: #5b9bff; --accent-text: #0b1220;
+      --ok: #4cc47f; --warn: #f0a542; --warn-bg: #3a2a10; --bad: #ff7b6e;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  [hidden] { display: none !important; }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; border: 1px solid var(--line); background: var(--panel);
+           border-radius: 8px; padding: 10px 14px; min-height: 44px; }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+  button.ghost { background: transparent; }
+  input, select { width: 100%; padding: 10px 12px; min-height: 44px; border: 1px solid var(--line);
+                  border-radius: 8px; background: var(--panel); }
+  label { display: block; font-size: 14px; color: var(--muted); margin: 12px 0 4px; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  header { position: sticky; top: 0; z-index: 5; background: var(--panel); border-bottom: 1px solid var(--line); }
+  .bar { max-width: 960px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .bar h1 { font-size: 18px; margin: 0; flex: 1 1 auto; }
+  .tabs { display: flex; gap: 4px; }
+  .tabs button { border: 0; background: transparent; border-bottom: 3px solid transparent; border-radius: 0; color: var(--muted); }
+  .tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+
+  main { max-width: 960px; margin: 0 auto; padding: 16px; }
+  .tools { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; margin-bottom: 8px; }
+  .tools2 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; color: var(--muted); font-size: 14px; }
+  .tools2 label { display: flex; gap: 6px; align-items: center; margin: 0; color: var(--text); }
+  .tools2 input[type=checkbox] { width: 20px; height: 20px; min-height: 0; }
+  .spacer { flex: 1; }
+
+  .grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .card.low { border-color: var(--warn); }
+  .card h3 { margin: 0; font-size: 16px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .row { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; }
+  .stock { font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .stock small { font-size: 14px; font-weight: 400; color: var(--muted); }
+  .badge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--warn-bg); color: var(--warn); }
+  .actions { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
+  .in { color: var(--ok); } .out { color: var(--bad); }
+
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .scroll { overflow-x: auto; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+
+  dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--text);
+           padding: 20px; width: min(440px, calc(100vw - 24px)); }
+  dialog::backdrop { background: rgba(0,0,0,.5); }
+  dialog h2 { margin: 0 0 4px; font-size: 18px; }
+  .btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .seg input { position: absolute; opacity: 0; width: 0; }
+  .seg label { margin: 0; text-align: center; padding: 12px; border: 2px solid var(--line); border-radius: 8px; color: var(--text); cursor: pointer; font-weight: 600; }
+  .seg input:checked + label.e { border-color: var(--ok); color: var(--ok); }
+  .seg input:checked + label.s { border-color: var(--bad); color: var(--bad); }
+  .seg input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  #lector { width: 100%; min-height: 260px; background: #000; border-radius: 8px; overflow: hidden; }
+
+  #login { max-width: 360px; margin: 12vh auto 0; padding: 0 16px; }
+  #login .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 24px; }
+  #login h1 { margin-top: 0; font-size: 20px; }
+  .error { color: var(--bad); font-size: 14px; min-height: 20px; margin-top: 10px; }
+  #toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--text); color: var(--bg);
+           padding: 12px 18px; border-radius: 10px; max-width: calc(100vw - 32px); z-index: 20; font-size: 15px; }
+  #toast.err { background: var(--bad); color: #fff; }
+</style>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<section id="login" hidden>
+  <div class="panel">
+    <h1>Inventario · Omega Eléctrica</h1>
+    <form id="form-login">
+      <label for="l-email">Correo</label>
+      <input id="l-email" type="email" autocomplete="username" required>
+      <label for="l-pass">Contraseña</label>
+      <input id="l-pass" type="password" autocomplete="current-password" required>
+      <div class="error" id="l-error" role="alert"></div>
+      <div class="btns"><button class="primary" type="submit" style="width:100%">Entrar</button></div>
+    </form>
+  </div>
+</section>
+
+<!-- ========== APP ========== -->
+<div id="app" hidden>
+  <header>
+    <div class="bar">
+      <h1>Inventario</h1>
+      <nav class="tabs" role="tablist">
+        <button role="tab" id="tab-inventario" aria-selected="true">Productos</button>
+        <button role="tab" id="tab-movimientos" aria-selected="false">Movimientos</button>
+      </nav>
+      <button class="ghost" id="btn-instalar" hidden>Instalar app</button>
+      <button class="ghost" id="btn-salir" title="Cerrar sesión">Salir</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="vista-inventario">
+      <div class="tools">
+        <input id="buscar" type="search" placeholder="Buscar por nombre, código o ubicación" aria-label="Buscar">
+        <button id="btn-scan">Escanear</button>
+        <button class="primary" id="btn-nuevo">+ Nuevo</button>
+      </div>
+      <div class="tools2">
+        <label><input type="checkbox" id="solo-bajo"> Solo stock bajo</label>
+        <select id="filtro-cat" style="width:auto" aria-label="Categoría"></select>
+        <span class="spacer"></span>
+        <span id="resumen"></span>
+        <button class="ghost" id="btn-csv" style="min-height:36px;padding:4px 10px">Exportar CSV</button>
+      </div>
+      <div class="grid" id="lista"></div>
+    </section>
+
+    <section id="vista-movimientos" hidden>
+      <div class="scroll"><table>
+        <thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th class="num">Cant.</th><th>Motivo</th><th>Usuario</th></tr></thead>
+        <tbody id="tabla-mov"></tbody>
+      </table></div>
+    </section>
+  </main>
+</div>
+
+<!-- ========== DIÁLOGO MOVIMIENTO ========== -->
+<dialog id="dlg-mov">
+  <form id="form-mov">
+    <h2 id="m-titulo"></h2>
+    <div class="meta" id="m-sub"></div>
+    <div class="seg">
+      <input type="radio" name="tipo" id="t-ent" value="entrada"><label class="e" for="t-ent">Entrada (+)</label>
+      <input type="radio" name="tipo" id="t-sal" value="salida"><label class="s" for="t-sal">Salida (−)</label>
+    </div>
+    <label for="m-cant">Cantidad</label>
+    <input id="m-cant" type="number" inputmode="decimal" min="0" step="any" required>
+    <label for="m-motivo">Motivo / trabajo (opcional)</label>
+    <input id="m-motivo" type="text" placeholder="Ej: reparación motor bomba 3">
+    <div class="btns">
+      <button type="button" class="ghost" data-cerrar>Cancelar</button>
+      <button type="submit" class="primary">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ========== DIÁLOGO PRODUCTO ========== -->
+<dialog id="dlg-prod">
+  <form id="form-prod">
+    <h2 id="p-titulo">Nuevo producto</h2>
+    <label for="p-codigo">Código (el del QR o código de barras)</label>
+    <input id="p-codigo" required>
+    <label for="p-nombre">Nombre</label>
+    <input id="p-nombre" required>
+    <div class="two">
+      <div><label for="p-cat">Categoría</label><input id="p-cat" list="cats"></div>
+      <div><label for="p-ubic">Ubicación</label><input id="p-ubic" placeholder="Estante A2"></div>
+    </div>
+    <datalist id="cats"></datalist>
+    <div class="two">
+      <div><label for="p-unidad">Unidad</label><input id="p-unidad" value="un" required></div>
+      <div><label for="p-min">Stock mínimo</label><input id="p-min" type="number" inputmode="decimal" min="0" step="any" value="0"></div>
+    </div>
+    <div id="p-stock-wrap"><label for="p-stock">Stock inicial</label><input id="p-stock" type="number" inputmode="decimal" min="0" step="any" value="0"></div>
+    <div class="btns">
+      <button type="button" class="ghost" id="p-desactivar" hidden>Dar de baja</button>
+      <span class="spacer"></span>
+      <button type="button" class="ghost" data-cerrar>Cancelar</button>
+      <button type="submit" class="primary">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ========== DIÁLOGO ESCANEO ========== -->
+<dialog id="dlg-scan">
+  <h2>Escanear código</h2>
+  <div class="meta" id="scan-msg">Apunta la cámara al QR o código de barras.</div>
+  <div id="lector" style="margin-top:12px"></div>
+  <div class="btns"><button type="button" class="ghost" id="scan-cerrar">Cerrar</button></div>
+</dialog>
+
+<div id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

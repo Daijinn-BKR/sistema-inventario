@@ -1,0 +1,27 @@
+{
+  "name": "inventario-omega",
+  "version": "1.0.0",
+  "description": "Inventario del taller con base de datos en la nube (Supabase): web, app instalable y .exe para Windows",
+  "author": "Omega Eléctrica",
+  "license": "MIT",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "web": "python -m http.server 8000",
+    "dist": "electron-builder --win --publish never"
+  },
+  "devDependencies": {
+    "electron": "^45.2.1",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "cl.omegaelectrica.inventario",
+    "productName": "Inventario Omega",
+    "directories": { "buildResources": "build", "output": "dist" },
+    "files": ["main.js", "index.html", "app.js", "config.js", "manifest.webmanifest", "icons/**", "build/icon.png"],
+    "artifactName": "Inventario-Omega-${version}-${target}.${ext}",
+    "win": { "target": ["nsis", "portable"], "icon": "build/icon.png" },
+    "nsis": { "oneClick": true, "perMachine": false, "createDesktopShortcut": true }
+  }
+}
